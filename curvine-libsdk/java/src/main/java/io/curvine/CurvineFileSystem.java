@@ -384,16 +384,12 @@ public class CurvineFileSystem extends FileSystem {
             statistics.incrementReadOps(1);
         }
 
-        String listed = formatPath(f);
-        byte[] bytes = libFs.listStatus(listed);
+        byte[] bytes = libFs.listStatus(formatPath(f));
         ListStatusResponse proto = ListStatusResponse.parseFrom(bytes);
         FileStatus[] statuses = new FileStatus[proto.getStatusesList().size()];
         for (int i = 0; i < statuses.length; i++) {
-            FileStatusProto status = proto.getStatuses(i);
-            // Listing a file returns that file (Hadoop's listStatus contract, and what the
-            // master sends): its path is f itself, not f/<its own name>.
-            Path path = listed.equals(status.getPath()) ? f : new Path(f, status.getName());
-            statuses[i] = toHadoop(status, path);
+            Path path = new Path(f, proto.getStatuses(i).getName());
+            statuses[i] = toHadoop(proto.getStatuses(i), path);
         }
         return statuses;
     }
