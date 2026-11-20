@@ -1,0 +1,29 @@
+# Fork-only: print the rustfmt diff, then run Clippy and the gateway tests.
+name: s3 fmt probe (fork only)
+on: push
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/curvineio/curvine-tests:rocky9
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Rust toolchain
+        run: |
+          export PATH="/root/.cargo/bin:$PATH"
+          unset RUSTUP_UPDATE_ROOT
+          unset RUSTUP_DIST_SERVER
+          rustup default stable
+      - name: rustfmt diff
+        run: |
+          export PATH="/root/.cargo/bin:$PATH"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          cargo fmt -p curvine-s3-gateway
+          echo "=== FMT DIFF START"; git diff; echo "=== FMT DIFF END"
+      - name: clippy and tests (formatted tree)
+        run: |
+          export PATH="/root/.cargo/bin:$PATH"
+          cargo clippy -p curvine-s3-gateway --all-targets --jobs 4 -- -D warnings
+          cargo test -p curvine-s3-gateway --lib --jobs 4 2>&1 | grep -E "test result|FAILED|panicked" | head -10
