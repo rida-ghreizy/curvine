@@ -2951,7 +2951,7 @@ mod tests {
             }
             if key == Some("read-only") {
                 let e = curvine_error::FsError::read_only_msg("Delete on a read-only mount");
-                return Err(crate::s3::handlers::delete_error_text(e));
+                return Err(crate::s3::handlers::fs_error_text(e));
             }
             Ok(())
         }
